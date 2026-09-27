@@ -4,9 +4,17 @@
 
 ## Tareas resueltas
 
-- **T5. Tres cuentos propios de la selva.** Escritos y guardados en la app, y exportados
-  con el botón *Ajustes → Exportar todos mis cuentos*. El archivo resultante es
-  [`cuentos.md`](cuentos.md), que se incluye en este repositorio.
+**Nivel 1 (obligatorias) — las 5 completadas:**
+
+- **T1. Contador de cuentos.** La cabecera de la lista muestra cuántos cuentos hay guardados.
+- **T2. Contador de palabras.** El editor muestra cuántas palabras lleva escritas, en vivo.
+- **T3. Vista previa en la tarjeta.** Cada tarjeta muestra las primeras líneas del cuento.
+- **T4. Confirmar salida sin guardar.** Si editas y presionas atrás, pregunta si descartas los cambios.
+- **T5. Tres cuentos propios de la selva.** Escritos y guardados en la app, y exportados con
+  el botón *Ajustes → Exportar todos mis cuentos*. El archivo resultante es
+  [`cuentos.md`](cuentos.md), incluido en este repositorio.
+
+**Nivel 2:** no implementado (requiere investigación en la documentación de Expo).
 
 ## Pasos para ejecutar el proyecto
 
