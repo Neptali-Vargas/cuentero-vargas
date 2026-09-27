@@ -20,7 +20,7 @@ export default function Lista() {
 
       async function cargar() {
         const filas = await db.getAllAsync(
-          'SELECT id, titulo, editado FROM cuento ORDER BY editado DESC'
+          'SELECT id, titulo, cuerpo, editado FROM cuento ORDER BY editado DESC'
         );
         if (activo) setCuentos(filas);
       }
@@ -50,6 +50,12 @@ export default function Lista() {
         data={cuentos}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16, gap: 12 }}
+        // T1: la cabecera de la lista muestra cuantos cuentos hay guardados
+        ListHeaderComponent={
+          <Text style={styles.contador}>
+            {cuentos.length} {cuentos.length === 1 ? 'cuento guardado' : 'cuentos guardados'}
+          </Text>
+        }
         ListEmptyComponent={
           <Text style={styles.vacio}>Todavia no hay cuentos. Toca + para escribir el primero.</Text>
         }
@@ -59,6 +65,10 @@ export default function Lista() {
             onPress={() => router.push(`/cuento/${item.id}`)}
           >
             <Text style={styles.tarjetaTitulo}>{item.titulo}</Text>
+            {/* T3: numberOfLines recorta el texto a 2 lineas con puntos suspensivos */}
+            <Text style={styles.tarjetaResumen} numberOfLines={2}>
+              {item.cuerpo}
+            </Text>
             <Text style={styles.tarjetaFecha}>
               {new Date(item.editado).toLocaleDateString('es-PE')}
             </Text>
@@ -84,7 +94,9 @@ const styles = StyleSheet.create({
     borderColor: '#e8e2d5',
   },
   tarjetaTitulo: { fontSize: 16, fontWeight: '600', color: '#1b4332' },
-  tarjetaFecha: { fontSize: 12, color: '#7a8b7f', marginTop: 4 },
+  tarjetaResumen: { fontSize: 13, lineHeight: 19, color: '#4a5a4f', marginTop: 6 },
+  tarjetaFecha: { fontSize: 12, color: '#7a8b7f', marginTop: 8 },
+  contador: { fontSize: 12, color: '#7a8b7f', marginBottom: 4 },
   vacio: { textAlign: 'center', color: '#7a8b7f', marginTop: 40 },
   boton: {
     position: 'absolute',

@@ -1,7 +1,7 @@
 // Pantalla 2: el editor. Sirve para crear y para editar, segun el id de la ruta.
 // /cuento/nuevo  -> formulario vacio
 // /cuento/7      -> formulario con el cuento 7
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   TextInput,
@@ -12,12 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 export default function Editor() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const navigation = useNavigation();
 
   // id viene de la URL y SIEMPRE es texto, por eso se usa Number(id) en el SQL
   const { id } = useLocalSearchParams();
@@ -25,6 +26,12 @@ export default function Editor() {
 
   const [titulo, setTitulo] = useState('');
   const [cuerpo, setCuerpo] = useState('');
+
+  // T4: avisa si el usuario escribio algo. Un ref porque lo leemos dentro de
+  // un listener sin que ese valor dispare un nuevo dibujado.
+  const modificado = useRef(false);
+  // se pone en true cuando YA se decidio salir, para no volver a preguntar
+  const salirPermitido = useRef(false);
 
   // useEffect con [] : se ejecuta una sola vez, cuando aparece la pantalla
   useEffect(() => {
@@ -43,6 +50,41 @@ export default function Editor() {
     }
     cargar();
   }, [id, esNuevo, db]);
+
+  // T4: beforeRemove se dispara cuando navigation va a sacar esta pantalla de
+  // la pila (boton atras, gesto, o router.back). preventDefault() lo cancela y
+  // da tiempo a preguntar al usuario.
+  useEffect(() => {
+    const subscription = navigation.addListener('beforeRemove', (evento) => {
+      if (salirPermitido.current || !modificado.current) return;
+
+      evento.preventDefault();
+
+      Alert.alert(
+        'Salir sin guardar',
+        'Tienes cambios sin guardar. Si sales ahora se perderan.',
+        [
+          { text: 'Seguir editando', style: 'cancel' },
+          {
+            text: 'Descartar',
+            style: 'destructive',
+            onPress: () => {
+              salirPermitido.current = true;
+              // se reenvia la accion original, ya sin la pregunta
+              navigation.dispatch(evento.data.action);
+            },
+          },
+        ]
+      );
+    });
+
+    return subscription;
+  }, [navigation]);
+
+  // T2: cuenta de palabras. trim() quita los espacios de los extremos y
+  // split(/\s+/) parte el texto por espacios. Si esta vacio, split devuelve
+  // [''] (un elemento vacio), por eso el || 0.
+  const palabras = cuerpo.trim() ? cuerpo.trim().split(/\s+/).length : 0;
 
   // CREAR o ACTUALIZAR. Los ? son parametros: nunca se pega texto dentro del SQL.
   async function guardar() {
@@ -66,6 +108,8 @@ export default function Editor() {
         [limpio, cuerpo, ahora, Number(id)]
       );
     }
+    // se marca que ya se puede salir sin preguntar
+    salirPermitido.current = true;
     router.back();
   }
 
@@ -78,6 +122,7 @@ export default function Editor() {
         style: 'destructive',
         onPress: async () => {
           await db.runAsync('DELETE FROM cuento WHERE id = ?', [Number(id)]);
+          salirPermitido.current = true;
           router.back();
         },
       },
@@ -96,17 +141,28 @@ export default function Editor() {
         style={styles.titulo}
         placeholder="Titulo del cuento"
         value={titulo}
-        onChangeText={setTitulo}
+        onChangeText={(texto) => {
+          setTitulo(texto);
+          modificado.current = true;
+        }}
       />
 
       <TextInput
         style={styles.cuerpo}
         placeholder="Habia una vez, en la quebrada..."
         value={cuerpo}
-        onChangeText={setCuerpo}
+        onChangeText={(texto) => {
+          setCuerpo(texto);
+          modificado.current = true;
+        }}
         multiline
         textAlignVertical="top"
       />
+
+      {/* T2: cuantas palabras lleva escritas, se actualiza mientras se escribe */}
+      <Text style={styles.contador}>
+        {palabras} {palabras === 1 ? 'palabra' : 'palabras'}
+      </Text>
 
       <Pressable style={styles.guardar} onPress={guardar}>
         <Text style={styles.guardarTexto}>Guardar</Text>
@@ -142,6 +198,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e8e2d5',
   },
+  contador: { fontSize: 12, color: '#7a8b7f', textAlign: 'right' },
   guardar: {
     backgroundColor: '#1b4332',
     borderRadius: 10,
